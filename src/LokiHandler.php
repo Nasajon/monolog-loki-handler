@@ -6,6 +6,7 @@ namespace Er1z\MonologLokiHandler;
 
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
+use phpDocumentor\Reflection\DocBlock\Tags\Var_;
 
 class LokiHandler extends AbstractProcessingHandler
 {
@@ -15,10 +16,16 @@ class LokiHandler extends AbstractProcessingHandler
      */
     protected $entrypoint;
 
-    public function __construct(string $entrypoint, $level = Logger::DEBUG, $bubble = true)
+    /**
+     * @var string
+     */
+    protected $channel;
+
+    public function __construct(string $entrypoint, string $channel, $level = Logger::DEBUG, $bubble = true)
     {
         parent::__construct($level, $bubble);
         $this->entrypoint = $this->getEntrypoint($entrypoint);
+        $this->channel = $channel;
     }
 
     protected function getDefaultFormatter()
@@ -43,7 +50,7 @@ class LokiHandler extends AbstractProcessingHandler
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
                 'Content-Length: ' . strlen($payload))
@@ -62,6 +69,9 @@ class LokiHandler extends AbstractProcessingHandler
                 $record['formatted']
             ]
         ];
+        
+        //Sobrescreve o channel padrão (app)
+        $payload['streams'][0]['stream']['channel'] = $this->channel;
 
         $this->sendPacket($payload);
     }
@@ -80,6 +90,5 @@ class LokiHandler extends AbstractProcessingHandler
 
         $this->sendPacket($payload);
     }
-
 
 }
